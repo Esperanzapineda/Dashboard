@@ -26,13 +26,15 @@ export async function createInvoice(formData: FormData) {
     });
     const amountInCents = amount * 100; //convertir la cantiad a centavos para eliminar errores de punto flotante
     const date = new Date().toISOString().split('T')[0]; //creemos una nueva fecha con el formato "AAAA-MM-DD" para la fecha de creación de la factura
-
-    // crear una consulta SQL para insertar la nueva factura en su base de datos y pasar las variables
-    await sql`
-    INSERT INTO invoices (customer_id, amount, status, date)
-    VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
-    `;
-
+    try {
+        // crear una consulta SQL para insertar la nueva factura en su base de datos y pasar las variables
+        await sql`
+        INSERT INTO invoices (customer_id, amount, status, date)
+        VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
+        `;
+    } catch (error) {
+        console.error(error);
+    }
     //Dado que está actualizando los datos mostrados en la ruta de facturas, desea borrar esta caché y generar una nueva solicitud al servidor.
     //Puede hacerlo con la revalidatePathfunción de Next.js
     revalidatePath('/dashboard/invoices');
@@ -48,16 +50,25 @@ export async function updateInvoice(id: string, formData: FormData) {
     });
 
     const amountInCents = amount * 100;
-    await sql`
+    try {
+        await sql`
             UPDATE invoices
             SET customer_id = ${customerId}, amount=${amountInCents}, status=${status}
             WHERE id = ${id}
         `;
+    } catch (error) {
+        console.error(error)
+    }
     revalidatePath('/dasboard/invoices');
     redirect('/dashboard/invoices')
 }
 
-export async function deleteInvoice(id: string){
-    await sql `DELETE FROM invoices WHERE id = ${id}`;
+export async function deleteInvoice(id: string) {
+    //throw new Error('Failed to Delete Invoice');
+    try {
+        await sql`DELETE FROM invoices WHERE id = ${id}`;
+    } catch (error) {
+        console.error(error)
+    }
     revalidatePath('/dashboard/invoices');
 }
